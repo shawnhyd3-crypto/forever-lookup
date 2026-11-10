@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.11.0 (2026-11-10)
+
+Built from years of Wowhead Quick Link user feedback (its GitHub issues and CurseForge comments).
+
+- **Never throws Lua errors.** Every lookup runs behind a safety net, so hovering buffs in combat or in instances can't spam errors.
+- **Hover a chat link and press CTRL-C.** No need to click the link first.
+- **Wowhead in your language automatically.** Links follow your game language (German client opens de.wowhead.com, and so on). `/lookup lang` still overrides it; `/lookup lang auto` goes back.
+- **Jump straight to comments:** `/lookup comments on` adds `#comments` to Wowhead links.
+- **Pick your main site without rebinding:** `/lookup main wowhead|warcraftdb|wiki`.
+- **See your keys:** `/lookup keys` lists every Forever Lookup binding, and the minimap book's tooltip shows your hover key (or warns that none is bound).
+- **`/flookup`** works as a unique slash command in case another addon took `/lookup` or `/wiki`.
+- **Mac:** binds CMD-C / CMD-SHIFT-C, and the popup closes after CMD-C.
+
 ## 0.10.0 (2026-11-10)
 
 Quick-link mode, inspired by Wowhead Quick Link.

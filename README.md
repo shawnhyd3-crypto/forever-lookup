@@ -8,7 +8,9 @@ An OSRS-style wiki button for **World of Warcraft: Forever**. Click the book on 
 
 ## Features
 
-- **CTRL-C quick links.** Hover over anything and press CTRL-C: a small popup opens with the Wowhead Forever link selected. Press CTRL-C again to copy and the popup closes itself. CTRL-SHIFT-C gives the wiki page instead. Both keys are bound on first login unless you already use them.
+- **CTRL-C quick links.** Hover over anything and press CTRL-C: a small popup opens with the Wowhead Forever link selected. Press CTRL-C again to copy and the popup closes itself. CTRL-SHIFT-C gives the wiki page instead. Both keys are bound on first login unless you already use them (CMD-C / CMD-SHIFT-C on Mac). Works on chat links just by hovering them.
+- **Your language, automatically.** Wowhead links follow the game client's language. Optional `#comments` jump.
+- **No Lua error spam.** Every lookup runs behind a safety net, including hovering buffs in combat.
 - **Click-anything lookup.** Left-click the minimap book to arm it. A preview follows your cursor ("Lookup: Hogger (NPC #448)"). Click to look it up. Esc or right-click cancels.
 - **Hover key.** Bind "Look up what's under the mouse" (Key Bindings > AddOns > Forever Lookup) to look up action buttons and bag items without clicking them.
 - **Looks things up by ID, not by name**, like the OSRS wiki's Special:Lookup. You get the right page even when names are shared. If no ID is available, it falls back to a name search instead of a dead end.
@@ -23,8 +25,12 @@ An OSRS-style wiki button for **World of Warcraft: Forever**. Click the book on 
 |---|---|
 | Link for what's under the mouse | **CTRL-C** (CTRL-SHIFT-C for the alternate site) |
 | Look something up by clicking | Left-click the minimap book, then click the thing |
-| Wowhead in your language | `/lookup lang de` (es, fr, it, pt, ru, ko, cn, tw, mx, off) |
+| Check your key bindings | `/lookup keys` (also shown in the minimap book's tooltip) |
+| Wowhead language | Automatic; override with `/lookup lang de` (es, fr, it, pt, ru, ko, cn, tw, mx, off, auto) |
+| Open Wowhead at the comments | `/lookup comments on` |
+| Change the main site | `/lookup main wowhead\|warcraftdb\|wiki` |
 | Change the alternate site | `/lookup alt wowhead\|warcraftdb\|wiki` |
+| Unique slash command | `/flookup` works if another addon took `/lookup` or `/wiki` |
 | Full panel for every lookup | `/lookup style panel` (`/lookup style quick` to go back) |
 | Search / recent lookups | Right-click the minimap book, or `/lookup` |
 | Search by name or link | `/lookup Hogger` or `/lookup [shift-clicked link]` |

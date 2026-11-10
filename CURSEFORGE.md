@@ -8,7 +8,9 @@
 
 **CTRL-SHIFT-C** gives you the warcraft.wiki.gg page instead.
 
-Both keys are set up automatically the first time you log in, unless you already use them for something else.
+Both keys are set up automatically the first time you log in, unless you already use them for something else. On Mac they're **CMD-C** and **CMD-SHIFT-C**. Not working? Type `/lookup keys` to see what's bound.
+
+It works on **chat links** too: just hover the link and press CTRL-C.
 
 **The OSRS way:** left-click the **book on your minimap**. A preview follows your cursor (*Lookup: Hogger (NPC #448)*). Click the thing you want to know about.
 
@@ -17,17 +19,21 @@ Both keys are set up automatically the first time you log in, unless you already
 - Looks things up **by ID, not by name**, so you land on the right page even when names are shared. Falls back to a name search when no ID is available.
 - Works on items, NPCs, quests (log and tracker), spells, buffs, mounts, toys, currencies, achievements, world objects and chat links.
 - One panel, three Forever databases. It remembers your favourite.
+- Wowhead links follow your game language automatically.
 - In-game tooltip on the result icon, a search box, and your last 8 lookups.
-- Safe in combat: when Forever hides information from addons, you get a name search instead of an error.
+- **No Lua error spam, ever.** When Forever hides information from addons in combat or instances, you get a name search instead of an error.
 
 ## Commands
 
-- `/lookup` or `/wiki`: open the panel
+- `/lookup`, `/flookup` or `/wiki`: open the panel
 - `/lookup <name or shift-clicked link>`: search
+- `/lookup keys`: show your Forever Lookup key bindings
 - `/lookup target`: look up your target
 - `/lookup minimap`: show or hide the minimap button
-- `/lookup lang de` (or es, fr, it, pt, ru, ko, cn, tw, mx, off): Wowhead links in your language
+- `/lookup main wowhead|warcraftdb|wiki`: what CTRL-C opens first
 - `/lookup alt wowhead|warcraftdb|wiki`: what CTRL-SHIFT-C opens
+- `/lookup comments on|off`: open Wowhead pages at the comments
+- `/lookup lang auto` (default), or de, es, fr, it, pt, ru, ko, cn, tw, mx, off: Wowhead language
 - `/lookup style panel`: use the full panel instead of the quick popup
 - `/lookup help`
 

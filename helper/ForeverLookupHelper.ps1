@@ -11,7 +11,7 @@ param([switch]$Test)
 $ErrorActionPreference = 'Stop'
 
 # Only these exact link shapes are opened. Anything else on the clipboard is ignored.
-$Pattern = '^https://((www|de|es|fr|it|pt|ru|ko|cn|tw|mx)\.wowhead\.com/forever/[a-z]+=\d+|(www|de|es|fr|it|pt|ru|ko|cn|tw|mx)\.wowhead\.com/forever/search\?q=[\w%+.\-~]+|forever\.warcraftdb\.com/data/[a-z]+/\d+|forever\.warcraftdb\.com/search\?q=[\w%+.\-~]+|warcraft\.wiki\.gg/wiki/Special:Search\?search=[\w%+.\-~]+&go=Go)$'
+$Pattern = '^https://((www|de|es|fr|it|pt|ru|ko|cn|tw|mx)\.wowhead\.com/forever/[a-z]+=\d+(#comments)?|(www|de|es|fr|it|pt|ru|ko|cn|tw|mx)\.wowhead\.com/forever/search\?q=[\w%+.\-~]+|forever\.warcraftdb\.com/data/[a-z]+/\d+|forever\.warcraftdb\.com/search\?q=[\w%+.\-~]+|warcraft\.wiki\.gg/wiki/Special:Search\?search=[\w%+.\-~]+&go=Go)$'
 
 function Test-LookupUrl([string]$text) {
     if ([string]::IsNullOrWhiteSpace($text)) { return $false }
@@ -28,6 +28,8 @@ if ($Test) {
         'https://warcraft.wiki.gg/wiki/Special:Search?search=Hogger&go=Go'             = $true
         'https://de.wowhead.com/forever/npc=448'                                       = $true
         'https://xx.wowhead.com/forever/npc=448'                                       = $false
+        'https://de.wowhead.com/forever/npc=448#comments'                              = $true
+        'https://www.wowhead.com/forever/item=6948#evil'                               = $false
         'https://www.wowhead.com/item=6948'                                            = $false
         'https://evil.example.com/forever/item=1'                                      = $false
         'https://www.wowhead.com/forever/item=6948 & calc.exe'                         = $false

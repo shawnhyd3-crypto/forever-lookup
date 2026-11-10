@@ -2,7 +2,7 @@
 ## Title: Forever Lookup
 ## Notes: Hover anything and press CTRL-C for its Wowhead Forever link, or click the minimap book, then click anything. Also WarcraftDB and wiki links.
 ## Author: Hydbro
-## Version: 0.10.0
+## Version: 0.11.0
 ## SavedVariables: ForeverLookupDB
 ## IconTexture: Interface\Icons\INV_Misc_Book_09
 ## AddonCompartmentFunc: ForeverLookup_OnCompartmentClick

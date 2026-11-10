@@ -8,7 +8,7 @@ local FL = {}
 ns.FL = FL
 _G.ForeverLookup = FL
 
-FL.version = "0.10.0"
+FL.version = "0.11.0"
 
 ---------------------------------------------------------------------------
 -- Helpers
@@ -76,10 +76,30 @@ local WARCRAFTDB_TYPES = {
 -- Wowhead language subdomains (like Wowhead Quick Link's prefix setting).
 FL.WOWHEAD_LANGS = { de = true, es = true, fr = true, it = true, pt = true, ru = true, ko = true, cn = true, tw = true, mx = true }
 
-function FL.WowheadHost()
+-- Game client locale -> Wowhead subdomain, used when the setting is "auto".
+FL.LOCALE_TO_WOWHEAD = {
+	deDE = "de", esES = "es", esMX = "mx", frFR = "fr", itIT = "it",
+	ptBR = "pt", ruRU = "ru", koKR = "ko", zhCN = "cn", zhTW = "tw",
+}
+
+function FL.WowheadLang()
 	local lang = FL.db and FL.db.wowheadLang
-	if lang and FL.WOWHEAD_LANGS[lang] then return lang .. ".wowhead.com" end
+	if lang == nil or lang == "auto" then
+		local loc = GetLocale and GetLocale()
+		return loc and FL.LOCALE_TO_WOWHEAD[loc] or nil
+	end
+	if FL.WOWHEAD_LANGS[lang] then return lang end
+	return nil
+end
+
+function FL.WowheadHost()
+	local lang = FL.WowheadLang()
+	if lang then return lang .. ".wowhead.com" end
 	return "www.wowhead.com"
+end
+
+local function wowheadSuffix()
+	return (FL.db and FL.db.comments) and "#comments" or ""
 end
 
 FL.SITES = {
@@ -87,7 +107,7 @@ FL.SITES = {
 		key = "wowhead", label = "Wowhead",
 		build = function(e)
 			local t = WOWHEAD_TYPES[e.kind]
-			if t and e.id then return string.format("https://%s/forever/%s=%d", FL.WowheadHost(), t, e.id) end
+			if t and e.id then return string.format("https://%s/forever/%s=%d%s", FL.WowheadHost(), t, e.id, wowheadSuffix()) end
 			if e.name then return "https://" .. FL.WowheadHost() .. "/forever/search?q=" .. FL.urlencode(e.name) end
 		end,
 	},
@@ -314,6 +334,12 @@ end
 function FL.Resolve()
 	local focus = FL.MouseFocus()
 
+	-- 0) A chat hyperlink under the mouse (set by the chat-frame hooks in UI.lua)
+	if FL.hoverLink then
+		local e = FL.FromLink(FL.hoverLink)
+		if e then return e end
+	end
+
 	-- 1) Chat-link tooltip (ItemRefTooltip) when hovering it
 	if focus and ItemRefTooltip and ItemRefTooltip:IsShown() and isDescendant(focus, ItemRefTooltip) then
 		local e = FL.FromTooltipData(FL.ttData[ItemRefTooltip], ItemRefTooltip)
@@ -349,6 +375,14 @@ function FL.Resolve()
 	-- 5) Name-only fallback
 	local name = GameTooltip and GameTooltip:IsShown() and FL.TooltipName(GameTooltip)
 	if name then return { kind = "search", name = name } end
+	return nil
+end
+
+-- Resolve() with a safety net: a lookup must never throw (Wowhead Quick Link's
+-- most common complaint is Lua error spam from hovering things in combat).
+function FL.SafeResolve()
+	local ok, e = pcall(FL.Resolve)
+	if ok then return e end
 	return nil
 end
 

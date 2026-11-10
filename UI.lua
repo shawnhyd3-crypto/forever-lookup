@@ -4,11 +4,23 @@ local ADDON_NAME, ns = ...
 local FL = ns.FL
 
 local DEFAULTS = {
-	site = "wowhead", altSite = "wiki", style = "quick", wowheadLang = "",
+	site = "wowhead", altSite = "wiki", style = "quick", wowheadLang = "auto", comments = false,
 	history = {}, minimapAngle = 200, hideMinimap = false,
 }
 local HISTORY_MAX = 8
 local db
+
+-- Mac players copy with Cmd+C (META in WoW's binding names).
+local IS_MAC = IsMacClient and IsMacClient() or false
+FL.COPY_LABEL = IS_MAC and "CMD-C" or "CTRL-C"
+local MOD_PREFIX = IS_MAC and "META-" or "CTRL-"
+
+local function IsCopyKeyUp(key)
+	local modDown = IsControlKeyDown() or (IsMetaKeyDown and IsMetaKeyDown())
+	if modDown and key == "C" then return true end
+	if IsKeyDown("C") and (key == "LCTRL" or key == "RCTRL" or key == "LMETA" or key == "RMETA") then return true end
+	return false
+end
 
 BINDING_HEADER_FOREVERLOOKUP = "Forever Lookup"
 BINDING_NAME_FOREVERLOOKUP_HOVER = "Generate link for what's under the mouse"
@@ -94,7 +106,7 @@ urlBox:SetAutoFocus(false)
 urlBox:SetMaxLetters(512)
 local urlHint = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 urlHint:SetPoint("TOPLEFT", urlBox, "BOTTOMLEFT", -2, -4)
-urlHint:SetText("Press Ctrl+C to copy, then paste it in your browser.")
+urlHint:SetText("Press " .. FL.COPY_LABEL .. " to copy, then paste it in your browser.")
 
 -- History
 local histLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
@@ -242,7 +254,7 @@ quick.edit:SetMaxLetters(0)
 
 quick.hint = quick:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 quick.hint:SetPoint("TOPLEFT", quick.edit, "BOTTOMLEFT", -4, -4)
-quick.hint:SetText("CTRL-C to copy")
+quick.hint:SetText(FL.COPY_LABEL .. " to copy")
 
 quick.siteButtons = {}
 for i, site in ipairs(FL.SITES) do
@@ -271,7 +283,7 @@ local function QuickSetSite(key)
 	local url = FL.BuildURL(quickEntry, key)
 	if not url then return false end
 	quickURL = url
-	quick.hint:SetText(FL.GetSite(key).label .. " link  ·  CTRL-C to copy")
+	quick.hint:SetText(FL.GetSite(key).label .. " link  ·  " .. FL.COPY_LABEL .. " to copy")
 	for _, b in ipairs(quick.siteButtons) do
 		b:SetEnabled(FL.BuildURL(quickEntry, b.siteKey) ~= nil)
 		if b.siteKey == key then b:LockHighlight() else b:UnlockHighlight() end
@@ -326,9 +338,7 @@ quick.edit:SetScript("OnTextChanged", function(self, userInput)
 end)
 quick.edit:SetScript("OnKeyUp", function(self, key)
 	-- Copy happened: close, exactly like Wowhead Quick Link.
-	if (IsControlKeyDown() and key == "C") or (IsKeyDown("C") and (key == "LCTRL" or key == "RCTRL")) then
-		HideQuick()
-	end
+	if IsCopyKeyUp(key) then HideQuick() end
 end)
 quick:SetScript("OnHide", function() quick.edit:ClearFocus() end)
 
@@ -431,7 +441,7 @@ banner:SetScript("OnUpdate", function(self, elapsed)
 	elapsedPreview = elapsedPreview + elapsed
 	if elapsedPreview > 0.1 then
 		elapsedPreview = 0
-		local e = FL.Resolve()
+		local e = FL.SafeResolve()
 		self.text:SetText("Lookup: " .. (e and FL.Describe(e) or "|cff999999point at something|r"))
 	end
 end)
@@ -461,7 +471,7 @@ armEvents:SetScript("OnEvent", function(_, event, button)
 	local focus = FL.MouseFocus()
 	if focus and FL.minimapButton and focus == FL.minimapButton then return end -- let the button toggle itself
 	if button == "RightButton" then FL.Disarm() return end
-	local e = FL.Resolve()
+	local e = FL.SafeResolve()
 	local hadCursor = GetCursorInfo() ~= nil
 	if not e then
 		-- Chat links resolve on mouse-up via SetItemRef; give that a moment before giving up.
@@ -494,12 +504,12 @@ function ForeverLookup_ToggleArm()
 end
 
 function ForeverLookup_HoverLookup()
-	local e = FL.Resolve()
+	local e = FL.SafeResolve()
 	if e then FL.Present(e) else FL.Print("nothing under the mouse to look up.") end
 end
 
 function ForeverLookup_HoverLookupAlt()
-	local e = FL.Resolve()
+	local e = FL.SafeResolve()
 	if e then FL.Present(e, db.altSite) else FL.Print("nothing under the mouse to look up.") end
 end
 
@@ -516,15 +526,46 @@ end
 
 local function SetupDefaultBindings()
 	if db.defaultBindingsSet or InCombatLockdown() then return end
-	local a = SetDefaultBinding("FOREVERLOOKUP_HOVER", "CTRL-C")
-	local b = SetDefaultBinding("FOREVERLOOKUP_HOVER_ALT", "CTRL-SHIFT-C")
+	local a = SetDefaultBinding("FOREVERLOOKUP_HOVER", MOD_PREFIX .. "C")
+	local b = SetDefaultBinding("FOREVERLOOKUP_HOVER_ALT", MOD_PREFIX .. "SHIFT-C")
 	if a or b then SaveBindings(GetCurrentBindingSet()) end
 	db.defaultBindingsSet = true
 	local key = GetBindingKey("FOREVERLOOKUP_HOVER")
 	if key then
 		FL.Print("hover over anything and press " .. key .. " to get its link.")
 	else
-		FL.Print("CTRL-C is already in use. Set a key under Key Bindings > AddOns > Forever Lookup.")
+		FL.Print(FL.COPY_LABEL .. " is already in use by another key binding. Pick a key under Key Bindings > AddOns > Forever Lookup.")
+	end
+end
+
+-- Shown in the minimap tooltip and /lookup keys, so a missing bind is never a mystery.
+local KEY_ACTIONS = {
+	{ "FOREVERLOOKUP_HOVER", "Link for what's under the mouse" },
+	{ "FOREVERLOOKUP_HOVER_ALT", "Alternate link" },
+	{ "FOREVERLOOKUP_ARM", "Arm click-anything lookup" },
+	{ "FOREVERLOOKUP_PANEL", "Open panel" },
+}
+function FL.KeyText(action)
+	local k1, k2 = GetBindingKey(action)
+	if k1 and k2 then return k1 .. " or " .. k2 end
+	return k1 or k2
+end
+
+-- Chat links: hovering a link in chat is enough, no click needed.
+local hookedChat = {}
+local function HookChatFrame(cf)
+	if not cf or hookedChat[cf] or not cf.HookScript then return end
+	hookedChat[cf] = true
+	cf:HookScript("OnHyperlinkEnter", function(_, link) FL.hoverLink = link end)
+	cf:HookScript("OnHyperlinkLeave", function() FL.hoverLink = nil end)
+	cf:HookScript("OnHide", function() FL.hoverLink = nil end)
+end
+local function HookAllChatFrames()
+	for i = 1, (NUM_CHAT_WINDOWS or 10) do HookChatFrame(_G["ChatFrame" .. i]) end
+	if FCF_OpenTemporaryWindow then
+		hooksecurefunc("FCF_OpenTemporaryWindow", function()
+			for _, name in ipairs(CHAT_FRAMES or {}) do HookChatFrame(_G[name]) end
+		end)
 	end
 end
 
@@ -584,6 +625,12 @@ local function CreateMinimapButton()
 	b:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 		GameTooltip:AddLine("Forever Lookup")
+		local k = FL.KeyText("FOREVERLOOKUP_HOVER")
+		if k then
+			GameTooltip:AddLine("Hover anything + " .. k .. ": get its link", 0.5, 1, 0.5)
+		else
+			GameTooltip:AddLine("No hover key bound: Key Bindings > AddOns > Forever Lookup", 1, 0.4, 0.4)
+		end
 		GameTooltip:AddLine("Left-click: then click anything to look it up", 1, 1, 1)
 		GameTooltip:AddLine("Right-click: search and recent lookups", 1, 1, 1)
 		GameTooltip:AddLine("Drag: move around the minimap", 0.7, 0.7, 0.7)
@@ -620,11 +667,12 @@ local function DebugDump()
 		return tostring(v)
 	end
 	FL.Print(string.format("type=%s id=%s guid=%s", show(data.type), show(data.id), show(data.guid)))
-	FL.Print("resolves to: " .. FL.Describe(FL.Resolve()))
+	FL.Print("resolves to: " .. FL.Describe(FL.SafeResolve()))
 end
 
 SLASH_FOREVERLOOKUP1 = "/lookup"
-SLASH_FOREVERLOOKUP2 = "/wiki"
+SLASH_FOREVERLOOKUP2 = "/flookup" -- unique; /lookup and /wiki may be taken by other addons
+SLASH_FOREVERLOOKUP3 = "/wiki"
 SlashCmdList.FOREVERLOOKUP = function(msg)
 	msg = (msg or ""):gsub("^%s+", ""):gsub("%s+$", "")
 	local cmd = msg:lower()
@@ -643,16 +691,38 @@ SlashCmdList.FOREVERLOOKUP = function(msg)
 	elseif cmd == "style quick" or cmd == "style panel" then
 		db.style = cmd:sub(7)
 		FL.Print("results now open in the " .. db.style .. (db.style == "quick" and " popup (CTRL-C copies and closes)." or " panel."))
+	elseif cmd == "keys" then
+		for _, a in ipairs(KEY_ACTIONS) do
+			FL.Print(a[2] .. ": " .. (FL.KeyText(a[1]) or "|cffff6666not bound|r"))
+		end
+		FL.Print("Change them under Key Bindings > AddOns > Forever Lookup.")
+	elseif cmd:match("^main%s+") then
+		local key = cmd:match("^main%s+(%a+)$")
+		local valid = false
+		for _, s in ipairs(FL.SITES) do if s.key == key then valid = true end end
+		if valid then
+			db.site = key
+			FL.Print(FL.COPY_LABEL .. " now opens " .. FL.GetSite(key).label .. " first.")
+		else
+			FL.Print("usage: /lookup main wowhead|warcraftdb|wiki")
+		end
+	elseif cmd == "comments" or cmd:match("^comments%s") then
+		local v = cmd:match("^comments%s+(%a+)$")
+		if v == "on" then db.comments = true elseif v == "off" then db.comments = false else db.comments = not db.comments end
+		FL.Print("Wowhead links " .. (db.comments and "jump straight to the comments." or "open at the top of the page."))
 	elseif cmd == "lang" or cmd:match("^lang%s") then
 		local lang = cmd:match("^lang%s+(%a+)$")
-		if lang == "off" or lang == "en" then
+		if lang == "auto" then
+			db.wowheadLang = "auto"
+			FL.Print("Wowhead links follow your game language (" .. (FL.WowheadLang() or "en") .. ").")
+		elseif lang == "off" or lang == "en" then
 			db.wowheadLang = ""
 			FL.Print("Wowhead links in English.")
 		elseif lang and FL.WOWHEAD_LANGS[lang] then
 			db.wowheadLang = lang
 			FL.Print("Wowhead links now use " .. lang .. ".wowhead.com.")
 		else
-			FL.Print("usage: /lookup lang de|es|fr|it|pt|ru|ko|cn|tw|mx|off")
+			FL.Print("usage: /lookup lang auto|de|es|fr|it|pt|ru|ko|cn|tw|mx|off")
 		end
 	elseif cmd:match("^alt%s+") then
 		local key = cmd:match("^alt%s+(%a+)$")
@@ -671,8 +741,8 @@ SlashCmdList.FOREVERLOOKUP = function(msg)
 	elseif cmd == "debug" then
 		DebugDump()
 	elseif cmd == "help" then
-		FL.Print("CTRL-C over anything: link  ·  CTRL-SHIFT-C: alternate link  ·  /lookup: panel  ·  /lookup <name or link>: search")
-		FL.Print("/lookup arm | target | minimap | debug  ·  /lookup style quick|panel  ·  /lookup lang de|fr|...|off  ·  /lookup alt wowhead|warcraftdb|wiki")
+		FL.Print(FL.COPY_LABEL .. " over anything: link  ·  " .. MOD_PREFIX .. "SHIFT-C: alternate link  ·  /lookup: panel  ·  /lookup <name or link>: search  (also /flookup)")
+		FL.Print("/lookup keys | arm | target | minimap | debug  ·  main <site>  ·  alt <site>  ·  comments on|off  ·  lang auto|de|fr|...|off  ·  style quick|panel")
 	else
 		local e = FL.FromLink(msg)
 		FL.Present(e or { kind = "search", name = FL.cleanName(msg) })
@@ -699,7 +769,13 @@ loader:SetScript("OnEvent", function(self, event, name)
 	for k, v in pairs(DEFAULTS) do
 		if db[k] == nil then db[k] = (type(v) == "table") and {} or v end
 	end
+	-- 0.10 saved "" as the default language; 0.11 defaults to following the game language.
+	if not db.migrated011 then
+		if db.wowheadLang == "" then db.wowheadLang = "auto" end
+		db.migrated011 = true
+	end
 	CreateMinimapButton()
+	HookAllChatFrames()
 	if not db.seenIntro then
 		db.seenIntro = true
 		FL.Print("click the book on your minimap, then click anything to look it up. Type /lookup help for more.")
