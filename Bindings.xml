@@ -2,6 +2,9 @@
 	<Binding name="FOREVERLOOKUP_HOVER" header="FOREVERLOOKUP" category="ADDONS">
 		ForeverLookup_HoverLookup()
 	</Binding>
+	<Binding name="FOREVERLOOKUP_HOVER_ALT" category="ADDONS">
+		ForeverLookup_HoverLookupAlt()
+	</Binding>
 	<Binding name="FOREVERLOOKUP_ARM" category="ADDONS">
 		ForeverLookup_ToggleArm()
 	</Binding>

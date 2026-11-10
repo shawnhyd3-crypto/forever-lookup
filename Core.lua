@@ -8,7 +8,7 @@ local FL = {}
 ns.FL = FL
 _G.ForeverLookup = FL
 
-FL.version = "0.9.0"
+FL.version = "0.10.0"
 
 ---------------------------------------------------------------------------
 -- Helpers
@@ -73,13 +73,22 @@ local WARCRAFTDB_TYPES = {
 	item = "item", npc = "npc", quest = "quest", spell = "spell", object = "object", faction = "faction",
 }
 
+-- Wowhead language subdomains (like Wowhead Quick Link's prefix setting).
+FL.WOWHEAD_LANGS = { de = true, es = true, fr = true, it = true, pt = true, ru = true, ko = true, cn = true, tw = true, mx = true }
+
+function FL.WowheadHost()
+	local lang = FL.db and FL.db.wowheadLang
+	if lang and FL.WOWHEAD_LANGS[lang] then return lang .. ".wowhead.com" end
+	return "www.wowhead.com"
+end
+
 FL.SITES = {
 	{
 		key = "wowhead", label = "Wowhead",
 		build = function(e)
 			local t = WOWHEAD_TYPES[e.kind]
-			if t and e.id then return string.format("https://www.wowhead.com/forever/%s=%d", t, e.id) end
-			if e.name then return "https://www.wowhead.com/forever/search?q=" .. FL.urlencode(e.name) end
+			if t and e.id then return string.format("https://%s/forever/%s=%d", FL.WowheadHost(), t, e.id) end
+			if e.name then return "https://" .. FL.WowheadHost() .. "/forever/search?q=" .. FL.urlencode(e.name) end
 		end,
 	},
 	{

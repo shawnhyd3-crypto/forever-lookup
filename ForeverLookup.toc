@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Forever Lookup
-## Notes: OSRS-style wiki button for WoW Forever. Click the book, then click anything to get its Wowhead, WarcraftDB or wiki page.
+## Notes: Hover anything and press CTRL-C for its Wowhead Forever link, or click the minimap book, then click anything. Also WarcraftDB and wiki links.
 ## Author: Hydbro
-## Version: 0.9.0
+## Version: 0.10.0
 ## SavedVariables: ForeverLookupDB
 ## IconTexture: Interface\Icons\INV_Misc_Book_09
 ## AddonCompartmentFunc: ForeverLookup_OnCompartmentClick

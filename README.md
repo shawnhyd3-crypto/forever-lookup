@@ -8,6 +8,7 @@ An OSRS-style wiki button for **World of Warcraft: Forever**. Click the book on 
 
 ## Features
 
+- **CTRL-C quick links.** Hover over anything and press CTRL-C: a small popup opens with the Wowhead Forever link selected. Press CTRL-C again to copy and the popup closes itself. CTRL-SHIFT-C gives the wiki page instead. Both keys are bound on first login unless you already use them.
 - **Click-anything lookup.** Left-click the minimap book to arm it. A preview follows your cursor ("Lookup: Hogger (NPC #448)"). Click to look it up. Esc or right-click cancels.
 - **Hover key.** Bind "Look up what's under the mouse" (Key Bindings > AddOns > Forever Lookup) to look up action buttons and bag items without clicking them.
 - **Looks things up by ID, not by name**, like the OSRS wiki's Special:Lookup. You get the right page even when names are shared. If no ID is available, it falls back to a name search instead of a dead end.
@@ -20,8 +21,11 @@ An OSRS-style wiki button for **World of Warcraft: Forever**. Click the book on 
 
 | Action | How |
 |---|---|
-| Look something up | Left-click the minimap book, then click the thing |
-| Look up what's under the mouse | Your bound key (Key Bindings > AddOns > Forever Lookup) |
+| Link for what's under the mouse | **CTRL-C** (CTRL-SHIFT-C for the alternate site) |
+| Look something up by clicking | Left-click the minimap book, then click the thing |
+| Wowhead in your language | `/lookup lang de` (es, fr, it, pt, ru, ko, cn, tw, mx, off) |
+| Change the alternate site | `/lookup alt wowhead\|warcraftdb\|wiki` |
+| Full panel for every lookup | `/lookup style panel` (`/lookup style quick` to go back) |
 | Search / recent lookups | Right-click the minimap book, or `/lookup` |
 | Search by name or link | `/lookup Hogger` or `/lookup [shift-clicked link]` |
 | Look up your target | `/lookup target` |

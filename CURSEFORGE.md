@@ -4,11 +4,13 @@
 
 ## How it works
 
-1. **Left-click the book** on your minimap. A preview follows your cursor: *Lookup: Hogger (NPC #448)*.
-2. **Click the thing** you want to know about.
-3. The panel opens with the link selected. **Press Ctrl+C** and paste it in your browser.
+**The fast way:** hover over anything and press **CTRL-C**. A small popup opens with the link selected. Press **CTRL-C** again to copy it; the popup closes itself. Paste it in your browser.
 
-Prefer a key? Bind **"Look up what's under the mouse"** under Key Bindings > AddOns > Forever Lookup. Best for action buttons and bag items.
+**CTRL-SHIFT-C** gives you the warcraft.wiki.gg page instead.
+
+Both keys are set up automatically the first time you log in, unless you already use them for something else.
+
+**The OSRS way:** left-click the **book on your minimap**. A preview follows your cursor (*Lookup: Hogger (NPC #448)*). Click the thing you want to know about.
 
 ## Features
 
@@ -24,6 +26,9 @@ Prefer a key? Bind **"Look up what's under the mouse"** under Key Bindings > Add
 - `/lookup <name or shift-clicked link>`: search
 - `/lookup target`: look up your target
 - `/lookup minimap`: show or hide the minimap button
+- `/lookup lang de` (or es, fr, it, pt, ru, ko, cn, tw, mx, off): Wowhead links in your language
+- `/lookup alt wowhead|warcraftdb|wiki`: what CTRL-SHIFT-C opens
+- `/lookup style panel`: use the full panel instead of the quick popup
 - `/lookup help`
 
 ## Why Ctrl+C?

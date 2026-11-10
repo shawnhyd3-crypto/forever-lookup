@@ -3,12 +3,16 @@
 local ADDON_NAME, ns = ...
 local FL = ns.FL
 
-local DEFAULTS = { site = "wowhead", history = {}, minimapAngle = 200, hideMinimap = false }
+local DEFAULTS = {
+	site = "wowhead", altSite = "wiki", style = "quick", wowheadLang = "",
+	history = {}, minimapAngle = 200, hideMinimap = false,
+}
 local HISTORY_MAX = 8
 local db
 
 BINDING_HEADER_FOREVERLOOKUP = "Forever Lookup"
-BINDING_NAME_FOREVERLOOKUP_HOVER = "Look up what's under the mouse"
+BINDING_NAME_FOREVERLOOKUP_HOVER = "Generate link for what's under the mouse"
+BINDING_NAME_FOREVERLOOKUP_HOVER_ALT = "Generate alternate link (wiki by default)"
 BINDING_NAME_FOREVERLOOKUP_ARM = "Arm lookup (click anything)"
 BINDING_NAME_FOREVERLOOKUP_PANEL = "Open lookup panel / search"
 
@@ -196,6 +200,152 @@ end
 for _, b in ipairs(siteButtons) do
 	b:SetScript("OnClick", function(self) SetSite(self.siteKey) end)
 end
+
+---------------------------------------------------------------------------
+-- Quick popup (Wowhead Quick Link style): link pre-selected, Ctrl+C copies
+-- and closes it. Esc or Enter closes. "More" opens the full panel.
+---------------------------------------------------------------------------
+local quick = CreateFrame("Frame", "ForeverLookupQuickPopup", UIParent, "BackdropTemplate")
+quick:SetSize(360, 122)
+quick:SetPoint("TOP", UIParent, "TOP", 0, -135)
+quick:SetFrameStrata("DIALOG")
+quick:SetToplevel(true)
+quick:SetClampedToScreen(true)
+quick:EnableMouse(true)
+quick:SetMovable(true)
+quick:RegisterForDrag("LeftButton")
+quick:SetScript("OnDragStart", quick.StartMoving)
+quick:SetScript("OnDragStop", quick.StopMovingOrSizing)
+quick:SetBackdrop({
+	bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+	edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+	tile = true, tileSize = 32, edgeSize = 32,
+	insets = { left = 11, right = 12, top = 12, bottom = 11 },
+})
+quick:Hide()
+tinsert(UISpecialFrames, "ForeverLookupQuickPopup")
+
+quick.icon = quick:CreateTexture(nil, "ARTWORK")
+quick.icon:SetSize(18, 18)
+quick.icon:SetPoint("TOPLEFT", 22, -18)
+quick.title = quick:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+quick.title:SetPoint("LEFT", quick.icon, "RIGHT", 6, 0)
+quick.title:SetPoint("RIGHT", quick, "RIGHT", -22, 0)
+quick.title:SetJustifyH("LEFT")
+quick.title:SetWordWrap(false)
+
+quick.edit = CreateFrame("EditBox", "ForeverLookupQuickEditBox", quick, "InputBoxTemplate")
+quick.edit:SetSize(312, 20)
+quick.edit:SetPoint("TOPLEFT", 26, -42)
+quick.edit:SetAutoFocus(false)
+quick.edit:SetMaxLetters(0)
+
+quick.hint = quick:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+quick.hint:SetPoint("TOPLEFT", quick.edit, "BOTTOMLEFT", -4, -4)
+quick.hint:SetText("CTRL-C to copy")
+
+quick.siteButtons = {}
+for i, site in ipairs(FL.SITES) do
+	local b = CreateFrame("Button", nil, quick, "UIPanelButtonTemplate")
+	b:SetSize(86, 20)
+	b:SetPoint("BOTTOMLEFT", 20 + (i - 1) * 90, 16)
+	b:SetText(site.label)
+	b.siteKey = site.key
+	quick.siteButtons[i] = b
+end
+quick.more = CreateFrame("Button", nil, quick, "UIPanelButtonTemplate")
+quick.more:SetSize(52, 20)
+quick.more:SetPoint("BOTTOMRIGHT", -20, 16)
+quick.more:SetText("More")
+
+local quickEntry, quickURL
+
+local function QuickSelect()
+	quick.edit:SetText(quickURL or "")
+	quick.edit:SetFocus()
+	quick.edit:HighlightText()
+end
+
+local function QuickSetSite(key)
+	if not quickEntry then return false end
+	local url = FL.BuildURL(quickEntry, key)
+	if not url then return false end
+	quickURL = url
+	quick.hint:SetText(FL.GetSite(key).label .. " link  ·  CTRL-C to copy")
+	for _, b in ipairs(quick.siteButtons) do
+		b:SetEnabled(FL.BuildURL(quickEntry, b.siteKey) ~= nil)
+		if b.siteKey == key then b:LockHighlight() else b:UnlockHighlight() end
+	end
+	QuickSelect()
+	return true
+end
+
+function FL.QuickShow(e, siteKey)
+	if not e then return end
+	FL.Fill(e)
+	quickEntry = e
+	quick.icon:SetTexture(e.icon)
+	quick.title:SetText(FL.Describe(e))
+	local key = siteKey
+	if not (key and FL.BuildURL(e, key)) then key = db.site end
+	if not FL.BuildURL(e, key) then
+		key = nil
+		for _, s in ipairs(FL.SITES) do
+			if FL.BuildURL(e, s.key) then key = s.key break end
+		end
+	end
+	if panel:IsShown() then panel:Hide() end
+	quick:Show()
+	if key then
+		QuickSetSite(key)
+		AddHistory(e)
+	else
+		quickURL = nil
+		quick.edit:SetText("")
+		quick.hint:SetText(e.blocked and "Hidden by combat restrictions. Try again out of combat." or "Nothing to link.")
+		for _, b in ipairs(quick.siteButtons) do b:SetEnabled(false); b:UnlockHighlight() end
+	end
+end
+
+for _, b in ipairs(quick.siteButtons) do
+	b:SetScript("OnClick", function(self)
+		if QuickSetSite(self.siteKey) then db.site = self.siteKey end
+	end)
+end
+quick.more:SetScript("OnClick", function()
+	local e = quickEntry
+	quick:Hide()
+	if e then FL.Show({ kind = e.kind, id = e.id, name = e.name }) end
+end)
+
+local function HideQuick() quick:Hide() end
+quick.edit:SetScript("OnEscapePressed", HideQuick)
+quick.edit:SetScript("OnEnterPressed", HideQuick)
+quick.edit:SetScript("OnTextChanged", function(self, userInput)
+	if userInput then QuickSelect() end -- read-only
+end)
+quick.edit:SetScript("OnKeyUp", function(self, key)
+	-- Copy happened: close, exactly like Wowhead Quick Link.
+	if (IsControlKeyDown() and key == "C") or (IsKeyDown("C") and (key == "LCTRL" or key == "RCTRL")) then
+		HideQuick()
+	end
+end)
+quick:SetScript("OnHide", function() quick.edit:ClearFocus() end)
+
+-- Show a result using the player's preferred style.
+function FL.Present(e, siteKey)
+	if not e then return end
+	if db.style == "panel" then
+		FL.Show(e)
+		if siteKey then
+			local preferred = db.site
+			SetSite(siteKey)
+			db.site = preferred -- an alternate-key lookup shouldn't change the saved favourite
+		end
+	else
+		FL.QuickShow(e, siteKey)
+	end
+end
 for _, b in ipairs(histButtons) do
 	b:SetScript("OnClick", function(self)
 		if self.entry then FL.Show({ kind = self.entry.kind, id = self.entry.id, name = self.entry.name }) end
@@ -321,7 +471,7 @@ armEvents:SetScript("OnEvent", function(_, event, button)
 		return
 	end
 	FL.Disarm()
-	FL.Show(e)
+	FL.Present(e)
 	-- A left-click on a bag/bank item would pick it up; put it back.
 	if not hadCursor then
 		C_Timer.After(0.2, function()
@@ -335,7 +485,7 @@ if SetItemRef then
 	hooksecurefunc("SetItemRef", function(link, text)
 		if not FL.armed then return end
 		local e = FL.FromLink(text) or FL.FromLink(link)
-		if e then FL.Disarm(); FL.Show(e) end
+		if e then FL.Disarm(); FL.Present(e) end
 	end)
 end
 
@@ -345,7 +495,37 @@ end
 
 function ForeverLookup_HoverLookup()
 	local e = FL.Resolve()
-	if e then FL.Show(e) else FL.Print("nothing under the mouse to look up.") end
+	if e then FL.Present(e) else FL.Print("nothing under the mouse to look up.") end
+end
+
+function ForeverLookup_HoverLookupAlt()
+	local e = FL.Resolve()
+	if e then FL.Present(e, db.altSite) else FL.Print("nothing under the mouse to look up.") end
+end
+
+-- Like Wowhead Quick Link: bind CTRL-C / CTRL-SHIFT-C once, only if the player
+-- hasn't bound these actions and the keys aren't used by anything else.
+local function SetDefaultBinding(action, key)
+	local b1, b2 = GetBindingKey(action)
+	if b1 == nil and b2 == nil and (GetBindingAction(key) or "") == "" then
+		SetBinding(key, action)
+		return true
+	end
+	return false
+end
+
+local function SetupDefaultBindings()
+	if db.defaultBindingsSet or InCombatLockdown() then return end
+	local a = SetDefaultBinding("FOREVERLOOKUP_HOVER", "CTRL-C")
+	local b = SetDefaultBinding("FOREVERLOOKUP_HOVER_ALT", "CTRL-SHIFT-C")
+	if a or b then SaveBindings(GetCurrentBindingSet()) end
+	db.defaultBindingsSet = true
+	local key = GetBindingKey("FOREVERLOOKUP_HOVER")
+	if key then
+		FL.Print("hover over anything and press " .. key .. " to get its link.")
+	else
+		FL.Print("CTRL-C is already in use. Set a key under Key Bindings > AddOns > Forever Lookup.")
+	end
 end
 
 ---------------------------------------------------------------------------
@@ -456,10 +636,34 @@ SlashCmdList.FOREVERLOOKUP = function(msg)
 		local guid = UnitGUID("target")
 		local utype, id = FL.idFromGUID(guid)
 		local name = FL.cleanName(UnitName("target"))
-		if utype == "Player" then FL.Show({ kind = "player", name = name })
-		elseif id then FL.Show({ kind = "npc", id = id, name = name })
-		elseif name then FL.Show({ kind = "npc", name = name })
+		if utype == "Player" then FL.Present({ kind = "player", name = name })
+		elseif id then FL.Present({ kind = "npc", id = id, name = name })
+		elseif name then FL.Present({ kind = "npc", name = name })
 		else FL.Print("no readable target (combat restrictions may hide it).") end
+	elseif cmd == "style quick" or cmd == "style panel" then
+		db.style = cmd:sub(7)
+		FL.Print("results now open in the " .. db.style .. (db.style == "quick" and " popup (CTRL-C copies and closes)." or " panel."))
+	elseif cmd == "lang" or cmd:match("^lang%s") then
+		local lang = cmd:match("^lang%s+(%a+)$")
+		if lang == "off" or lang == "en" then
+			db.wowheadLang = ""
+			FL.Print("Wowhead links in English.")
+		elseif lang and FL.WOWHEAD_LANGS[lang] then
+			db.wowheadLang = lang
+			FL.Print("Wowhead links now use " .. lang .. ".wowhead.com.")
+		else
+			FL.Print("usage: /lookup lang de|es|fr|it|pt|ru|ko|cn|tw|mx|off")
+		end
+	elseif cmd:match("^alt%s+") then
+		local key = cmd:match("^alt%s+(%a+)$")
+		local valid = false
+		for _, s in ipairs(FL.SITES) do if s.key == key then valid = true end end
+		if valid then
+			db.altSite = key
+			FL.Print("alternate key (CTRL-SHIFT-C) now opens " .. FL.GetSite(key).label .. ".")
+		else
+			FL.Print("usage: /lookup alt wowhead|warcraftdb|wiki")
+		end
 	elseif cmd == "minimap" then
 		db.hideMinimap = not db.hideMinimap
 		if FL.minimapButton then FL.minimapButton:SetShown(not db.hideMinimap) end
@@ -467,10 +671,11 @@ SlashCmdList.FOREVERLOOKUP = function(msg)
 	elseif cmd == "debug" then
 		DebugDump()
 	elseif cmd == "help" then
-		FL.Print("/lookup  open panel  ·  /lookup <name or link>  search  ·  /lookup arm  ·  /lookup target  ·  /lookup minimap  ·  /lookup debug")
+		FL.Print("CTRL-C over anything: link  ·  CTRL-SHIFT-C: alternate link  ·  /lookup: panel  ·  /lookup <name or link>: search")
+		FL.Print("/lookup arm | target | minimap | debug  ·  /lookup style quick|panel  ·  /lookup lang de|fr|...|off  ·  /lookup alt wowhead|warcraftdb|wiki")
 	else
 		local e = FL.FromLink(msg)
-		FL.Show(e or { kind = "search", name = FL.cleanName(msg) })
+		FL.Present(e or { kind = "search", name = FL.cleanName(msg) })
 	end
 end
 
@@ -479,11 +684,18 @@ end
 ---------------------------------------------------------------------------
 local loader = CreateFrame("Frame")
 loader:RegisterEvent("ADDON_LOADED")
-loader:SetScript("OnEvent", function(self, _, name)
+loader:RegisterEvent("PLAYER_LOGIN")
+loader:SetScript("OnEvent", function(self, event, name)
+	if event == "PLAYER_LOGIN" then
+		self:UnregisterEvent("PLAYER_LOGIN")
+		if db then SetupDefaultBindings() end
+		return
+	end
 	if name ~= ADDON_NAME then return end
 	self:UnregisterEvent("ADDON_LOADED")
 	ForeverLookupDB = ForeverLookupDB or {}
 	db = ForeverLookupDB
+	FL.db = db
 	for k, v in pairs(DEFAULTS) do
 		if db[k] == nil then db[k] = (type(v) == "table") and {} or v end
 	end
