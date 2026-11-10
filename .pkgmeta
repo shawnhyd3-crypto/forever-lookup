@@ -2,6 +2,7 @@ package-as: ForeverLookup
 
 ignore:
   - helper
+  - media
   - CURSEFORGE.md
   - .github
   - .gitignore

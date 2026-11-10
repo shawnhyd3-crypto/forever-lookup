@@ -10,7 +10,7 @@
 ## AddonCompartmentFuncOnLeave: ForeverLookup_OnCompartmentLeave
 ## X-License: MIT
 ## X-Website: https://github.com/shawnhyd3-crypto/forever-lookup
-# After creating the CurseForge project, add:  ## X-Curse-Project-ID: <number>
+## X-Curse-Project-ID: 1797051
 
 Core.lua
 UI.lua

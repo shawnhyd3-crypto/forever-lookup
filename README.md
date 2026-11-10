@@ -1,5 +1,9 @@
 # Forever Lookup
 
+<img src="media/logo.png" alt="Forever Lookup logo" width="128" align="right">
+
+[CurseForge](https://www.curseforge.com/wow/addons/forever-lookup) (pending moderation)
+
 An OSRS-style wiki button for **World of Warcraft: Forever**. Click the book on your minimap, then click anything in the game: an NPC, an item in your bags, a quest, a spell, a buff, a herb. You get its exact page on Wowhead Forever, WarcraftDB Forever or warcraft.wiki.gg.
 
 ## Features
