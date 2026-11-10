@@ -1,0 +1,11 @@
+<Bindings>
+	<Binding name="FOREVERLOOKUP_HOVER" header="FOREVERLOOKUP" category="ADDONS">
+		ForeverLookup_HoverLookup()
+	</Binding>
+	<Binding name="FOREVERLOOKUP_ARM" category="ADDONS">
+		ForeverLookup_ToggleArm()
+	</Binding>
+	<Binding name="FOREVERLOOKUP_PANEL" category="ADDONS">
+		ForeverLookup_TogglePanel()
+	</Binding>
+</Bindings>

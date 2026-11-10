@@ -1,0 +1,4 @@
+.release/
+*.zip
+desktop.ini
+.DS_Store

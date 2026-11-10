@@ -1,0 +1,16 @@
+## Interface: 16001
+## Title: Forever Lookup
+## Notes: OSRS-style wiki button for WoW Forever. Click the book, then click anything to get its Wowhead, WarcraftDB or wiki page.
+## Author: xHydbro
+## Version: 0.9.0
+## SavedVariables: ForeverLookupDB
+## IconTexture: Interface\Icons\INV_Misc_Book_09
+## AddonCompartmentFunc: ForeverLookup_OnCompartmentClick
+## AddonCompartmentFuncOnEnter: ForeverLookup_OnCompartmentEnter
+## AddonCompartmentFuncOnLeave: ForeverLookup_OnCompartmentLeave
+## X-License: MIT
+# After creating the CurseForge project, add:  ## X-Curse-Project-ID: <number>
+# After creating the GitHub repo, add:         ## X-Website: https://github.com/<you>/forever-lookup
+
+Core.lua
+UI.lua

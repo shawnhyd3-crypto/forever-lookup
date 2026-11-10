@@ -1,0 +1,23 @@
+# Packages the addon and uploads it when you push a version tag (e.g. git tag v0.9.1 && git push --tags).
+# Needs repository secrets: CF_API_KEY (CurseForge API token). Optional: WAGO_API_TOKEN.
+# The TOC must contain "## X-Curse-Project-ID: <id>" for the CurseForge upload.
+# NOTE: confirm BigWigsMods/packager recognises Interface 16001 (WoW Forever). Until then, upload the zip by hand.
+name: Package and release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: BigWigsMods/packager@v2

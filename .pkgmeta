@@ -1,0 +1,11 @@
+package-as: ForeverLookup
+
+ignore:
+  - helper
+  - CURSEFORGE.md
+  - .github
+  - .gitignore
+
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
